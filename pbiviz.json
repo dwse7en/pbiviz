@@ -4,10 +4,10 @@
         "displayName": "DateSlicer",
         "guid": "dateSlicer43C890F8DD8D426DB5903123A14E9F00",
         "visualClassName": "Visual",
-        "version": "1.0.0.0",
+        "version": "1.0.0.1",
         "description": "DateRangeSlicer",
         "supportUrl": "app.powerbi.com",
-        "gitHubUrl": "github.com/WeigelWang/PowerBI-visuals"
+        "gitHubUrl": "https://github.com/dwse7en/pbiviz.git"
     },
     "apiVersion": "5.3.0",
     "author": {
@@ -23,5 +23,5 @@
     "dependencies": "dependencies.json",
     "stringResources": [],
     "formattingPane": true,
-    "version": "1.0.0.0"
+    "version": "1.0.0.1"
 }

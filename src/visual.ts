@@ -56,6 +56,13 @@ export class Visual implements IVisual {
     private initialMin: string = "";
     private initialMax: string = "";
     private isLocaleZH: boolean;
+    // 当用户点击清除时，避免 update() 自动重新应用拉入的度量默认范围
+    private suppressDefaultRangeApply: boolean = false;
+    // 保存上一次应用的度量值，用于检测度量值是否改变
+    private lastAppliedStartMeasure: string = "";
+    private lastAppliedEndMeasure: string = "";
+    // 标记用户是否主动清除了过滤器
+    private isUserCleared: boolean = false;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -173,19 +180,74 @@ export class Visual implements IVisual {
                 this.startDateInput.max = maxStr;
                 this.endDateInput.min = minStr;
                 this.endDateInput.max = maxStr;
-                if (!this.startDateInput.value) {
-                    this.startDateInput.value = minStr;
-                }
-                if (!this.endDateInput.value) {
-                    this.endDateInput.value = maxStr;
-                }
             }
         }
 
-        // 处理从书签或其它视觉对象传入的过滤状态同步
-        // 实际上线环境中应提取 options.jsonFilters 并将其还原到 UI 
-        this.validateDates(); // in case defaults created invalid range
-        this.applyFilter();
+        // 检查度量值是否存在及是否发生变化
+        const hasDefaultMeasures = dataView.categorical.values && dataView.categorical.values.length >= 2;
+        let measureValuesChanged = false;
+
+        if (hasDefaultMeasures && !this.isUserCleared) {
+            const startVal = dataView.categorical.values[0].values[0] as any;
+            const endVal = dataView.categorical.values[1].values[0] as any;
+            const currentStartMeasure = startVal != null && startVal !== true ? this.formatDate(startVal) : "";
+            const currentEndMeasure = endVal != null && endVal !== true ? this.formatDate(endVal) : "";
+            
+            // 检测度量值是否改变
+            if (currentStartMeasure !== this.lastAppliedStartMeasure || currentEndMeasure !== this.lastAppliedEndMeasure) {
+                measureValuesChanged = true;
+                this.lastAppliedStartMeasure = currentStartMeasure;
+                this.lastAppliedEndMeasure = currentEndMeasure;
+                // 如果度量值改变，自动应用新的度量值
+                if (currentStartMeasure) {
+                    this.startDateInput.value = currentStartMeasure;
+                }
+                if (currentEndMeasure) {
+                    this.endDateInput.value = currentEndMeasure;
+                }
+                this.validateDates();
+                this.applyFilter();
+                return;
+            }
+        }
+
+        // 首先尝试从已有的 JSON 过滤器中恢复日期值（用于页面切换回来时的状态恢复）
+        const hasRestoredFromFilter = this.restoreFilterFromOptions(options);
+
+        if (!hasRestoredFromFilter) {
+            // 如果没有从过滤器恢复，检查是否有拖入的度量值（开始日期、结束日期）
+            // 只有在没有被 clear() 抑制的情况下，才自动将度量值应用为默认范围
+            if (!this.suppressDefaultRangeApply && hasDefaultMeasures) {
+                this.applyDefaultMeasures();
+            } else {
+                if (this.suppressDefaultRangeApply) {
+                    // clear 后保持输入框为初始 min/max 值
+                    if (this.initialMin) {
+                        this.startDateInput.min = this.initialMin;
+                        this.endDateInput.min = this.initialMin;
+                    }
+                    if (this.initialMax) {
+                        this.startDateInput.max = this.initialMax;
+                        this.endDateInput.max = this.initialMax;
+                    }
+                    // 不调用 applyFilter()，以保持已清除的无筛选状态
+                } else {
+                    // 没有度量值也未被抑制：使用初始 min/max 填充并应用过滤
+                    if (!this.startDateInput.value && this.initialMin) {
+                        this.startDateInput.value = this.initialMin;
+                    }
+                    if (!this.endDateInput.value && this.initialMax) {
+                        this.endDateInput.value = this.initialMax;
+                    }
+                    this.validateDates();
+                    this.applyFilter();
+                }
+            }
+        } else {
+            // 成功从过滤器恢复后，清除用户清除标记，允许后续度量值变化更新
+            this.isUserCleared = false;
+            this.suppressDefaultRangeApply = false;
+        }
     }
 
     private hexToRgb(hex: string): { r: number, g: number, b: number } | null {
@@ -316,16 +378,65 @@ export class Visual implements IVisual {
         this.host.applyJsonFilter(filter, "general", "filter", powerbi.FilterAction.merge);
     }
 
+    private restoreFilterFromOptions(options: VisualUpdateOptions): boolean {
+        // 从 options.jsonFilters 中尝试恢复过滤器状态
+        if (!options.jsonFilters || !Array.isArray(options.jsonFilters) || options.jsonFilters.length === 0) {
+            return false;
+        }
+
+        try {
+            for (const filter of options.jsonFilters) {
+                if (filter && (filter as any).conditions) {
+                    const conditions = (filter as any).conditions;
+                    let startDate: string | null = null;
+                    let endDate: string | null = null;
+
+                    // 从条件中提取开始日期和结束日期
+                    for (const condition of conditions) {
+                        if (condition.operator === "GreaterThanOrEqual" && condition.value) {
+                            startDate = this.formatDate(new Date(condition.value));
+                        } else if (condition.operator === "LessThanOrEqual" && condition.value) {
+                            endDate = this.formatDate(new Date(condition.value));
+                        }
+                    }
+
+                    // 如果成功提取到日期，设置输入框并返回 true
+                    if (startDate || endDate) {
+                        if (startDate) {
+                            this.startDateInput.value = startDate;
+                        }
+                        if (endDate) {
+                            this.endDateInput.value = endDate;
+                        }
+                        this.validateDates();
+                        // 恢复过滤器时，清除用户清除标记，允许日后的度量值变化更新
+                        this.isUserCleared = false;
+                        return true;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error restoring filter from options:", e);
+        }
+
+        return false;
+    }
+
     private clearFilter() {
-        this.startDateInput.value = "";
-        this.endDateInput.value = "";
+        this.startDateInput.value = this.initialMin;  // 清除时显示最小日期
+        this.endDateInput.value = this.initialMax;    // 清除时显示最大日期
         this.startDateInput.classList.remove("invalid");
         this.endDateInput.classList.remove("invalid");
+        // 标记用户已主动清除
+        this.isUserCleared = true;
+        this.suppressDefaultRangeApply = true;
         this.host.applyJsonFilter(null, "general", "filter", powerbi.FilterAction.remove);
     }
 
-
     private applyDefaultMeasures() {
+        // 用户主动点击“重置”时允许应用默认度量（解除清除时的抑制）
+        this.suppressDefaultRangeApply = false;
+        this.isUserCleared = false;  // 清除用户清除标记
         // 如果用户提供了度量值，则设置为度量的结果，否则回退到 min/max值。
         const dv = this.latestDataView;
         if (dv && dv.categorical && dv.categorical.values) {
@@ -340,9 +451,21 @@ export class Visual implements IVisual {
                 if (endVal != null && endVal !== true) {
                     this.endDateInput.value = this.formatDate(endVal);
                 }
+                // 验证并应用过滤
+                this.validateDates();
+                this.applyFilter();
+                return;
             }
         }
+        // 如果没有度量值，回退到最小/最大值
+        if (!this.startDateInput.value && this.initialMin) {
+            this.startDateInput.value = this.initialMin;
+        }
+        if (!this.endDateInput.value && this.initialMax) {
+            this.endDateInput.value = this.initialMax;
+        }
         // 再次应用过滤确保同步
+        this.validateDates();
         this.applyFilter();
     }
 

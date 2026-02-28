@@ -1,0 +1,17 @@
+{
+		"version": "1.0.0.1",
+		"author": {"name":"Weigel","email":"weiwu@iwstech.com"},
+		"resources": [
+			{
+				"resourceId": "rId0",
+				"sourceType": 5,
+				"file": "resources/dateSlicer43C890F8DD8D426DB5903123A14E9F00.pbiviz.json"
+			}
+		],
+		"visual": {"name":"dateSlicer","displayName":"DateSlicer","guid":"dateSlicer43C890F8DD8D426DB5903123A14E9F00","visualClassName":"Visual","version":"1.0.0.1","description":"DateRangeSlicer","supportUrl":"app.powerbi.com","gitHubUrl":"github.com/WeigelWang/PowerBI-visuals"},
+		"metadata": {
+			"pbivizjson": {
+				"resourceId": "rId0"
+			}
+		}
+	}

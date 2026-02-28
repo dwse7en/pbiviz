@@ -23,6 +23,10 @@ export declare class Visual implements IVisual {
     private initialMin;
     private initialMax;
     private isLocaleZH;
+    private suppressDefaultRangeApply;
+    private lastAppliedStartMeasure;
+    private lastAppliedEndMeasure;
+    private isUserCleared;
     constructor(options: VisualConstructorOptions);
     private initUI;
     private createButton;
@@ -31,6 +35,7 @@ export declare class Visual implements IVisual {
     private hexToRgb;
     private applyFormatting;
     private applyFilter;
+    private restoreFilterFromOptions;
     private clearFilter;
     private applyDefaultMeasures;
     private lastChanged;
