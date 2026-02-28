@@ -361,17 +361,45 @@ export class Visual implements IVisual {
         }
 
         const conditions: any[] = [];
+
+        // helper that builds a Date object representing **local** midnight for a
+        // yyyy-mm-dd string. we avoid calling new Date("yyyy-mm-dd") because
+        // that constructor treats the input as UTC and the resulting ISO string
+        // will later be displayed in the user's local timezone (e.g. +8) – hence
+        // the "08:00" symptom described in the bug report. constructing with
+        // numeric arguments gives us a Date at local midnight; when the filter
+        // serializes it to UTC the value will shift backwards by the timezone
+        // offset so that Power BI always shows exactly midnight for the chosen
+        // calendar day.
+        const parseLocalDate = (isoDate: string): Date | null => {
+            if (!isoDate) {
+                return null;
+            }
+            const parts = isoDate.split("-").map(p => parseInt(p, 10));
+            if (parts.length !== 3 || parts.some(isNaN)) {
+                return null;
+            }
+            const [y, m, d] = parts;
+            return new Date(y, m - 1, d); // local midnight
+        };
+
         if (this.startDateInput.value) {
-            conditions.push({
-                operator: "GreaterThanOrEqual",
-                value: new Date(this.startDateInput.value).toISOString()
-            });
+            const startDate = parseLocalDate(this.startDateInput.value);
+            if (startDate) {
+                conditions.push({
+                    operator: "GreaterThanOrEqual",
+                    value: startDate // pass Date object instead of ISO string
+                });
+            }
         }
         if (this.endDateInput.value) {
-            conditions.push({
-                operator: "LessThanOrEqual",
-                value: new Date(this.endDateInput.value).toISOString()
-            });
+            const endDate = parseLocalDate(this.endDateInput.value);
+            if (endDate) {
+                conditions.push({
+                    operator: "LessThanOrEqual",
+                    value: endDate
+                });
+            }
         }
 
         const filter = new AdvancedFilter(this.currentTarget, "And", conditions);
