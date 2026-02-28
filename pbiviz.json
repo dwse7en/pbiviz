@@ -1,0 +1,27 @@
+{
+    "visual": {
+        "name": "dateSlicer",
+        "displayName": "DateSlicer",
+        "guid": "dateSlicer43C890F8DD8D426DB5903123A14E9F00",
+        "visualClassName": "Visual",
+        "version": "1.0.0.0",
+        "description": "DateRangeSlicer",
+        "supportUrl": "app.powerbi.com",
+        "gitHubUrl": "github.com/WeigelWang/PowerBI-visuals"
+    },
+    "apiVersion": "5.3.0",
+    "author": {
+        "name": "Weigel",
+        "email": "weiwu@iwstech.com"
+    },
+    "assets": {
+        "icon": "assets/icon.png"
+    },
+    "externalJS": [],
+    "style": "style/visual.less",
+    "capabilities": "capabilities.json",
+    "dependencies": "dependencies.json",
+    "stringResources": [],
+    "formattingPane": true,
+    "version": "1.0.0.0"
+}

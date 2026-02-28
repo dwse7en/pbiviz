@@ -1,0 +1,116 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Date",
+            "name": "date",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Default Start Date Measure",
+            "name": "defaultStart",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Default End Date Measure",
+            "name": "defaultEnd",
+            "kind": "Measure"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "conditions": [
+                { "date": { "max": 1 }, "defaultStart": { "max": 1 }, "defaultEnd": { "max": 1 } }
+            ],
+            "categorical": {
+                "categories": {
+                    "for": { "in": "date" }
+                },
+                "values": {
+                    "select": [
+                        { "bind": { "to": "defaultStart" } },
+                        { "bind": { "to": "defaultEnd" } }
+                    ]
+                }
+            }
+        }
+    ],
+    "objects": {
+        "general": {
+            "properties": {
+                "filter": {
+                    "type": { "filter": true }
+                }
+            }
+        },
+        "dateInputs": {
+            "properties": {
+                "fontFamily": {
+                    "type": { "formatting": { "fontFamily": true } }
+                },
+                "fontColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "fontSize": {
+                    "type": { "formatting": { "fontSize": true } }
+                },
+                "inputBackgroundColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "inputBackgroundTransparency": {
+                    "type": { "numeric": true }
+                },
+                "inputBorderColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "bold": {
+                    "type": { "bool": true }
+                },
+                "italic": {
+                    "type": { "bool": true }
+                },
+                "underline": {
+                    "type": { "bool": true }
+                }
+            }
+        }
+        ,
+        "dateHeaderText": {
+            "properties": {
+                "headerText": {
+                    "type": { "text": true }
+                },
+                "fontFamily": {
+                    "type": { "formatting": { "fontFamily": true } }
+                },
+                "fontColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "fontSize": {
+                    "type": { "formatting": { "fontSize": true } }
+                },
+                "headerBackgroundColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "headerBackgroundTransparency": {
+                    "type": { "numeric": true }
+                },
+                "headerMarginTop": { "type": { "numeric": true } },
+                "headerMarginBottom": { "type": { "numeric": true } },
+                "bold": { "type": { "bool": true } },
+                "italic": { "type": { "bool": true } },
+                "underline": { "type": { "bool": true } }
+            }
+        },
+        "dateHeaderIcons": {
+            "properties": {
+                "clearIconColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "resetIconColor": {
+                    "type": { "fill": { "solid": { "color": true } } }
+                }
+            }
+        }
+    },
+    "privileges": []
+}

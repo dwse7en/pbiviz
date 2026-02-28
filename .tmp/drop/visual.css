@@ -1,0 +1,129 @@
+/* * 样式控制 (Styling)
+ * 采用 Flexbox 响应式布局 (Responsive Design)，避免全局污染 
+ */
+.date-slicer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 0px;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* prevent horizontal scroll from header icons */
+  /* shortcuts panel removed, replaced by icon buttons inside inputs */
+}
+.date-slicer-container .icon-bar {
+  display: flex;
+  gap: 4px;
+  margin-right: 4px;
+  /* space between icons and first input */
+  align-items: center;
+  /* keep icons vertically centered */
+}
+.date-slicer-container .icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px;
+  color: inherit;
+  /* inherit color from parent for SVG currentColor */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.date-slicer-container .inputs-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  /* keep items on baseline */
+}
+.date-slicer-container .inputs-panel .input-group {
+  display: flex;
+  flex-direction: row;
+  /* icons and input side by side */
+  align-items: center;
+  flex: 0 0 auto;
+  /* width handled by input itself to keep 100px */
+  /* ensure two groups can sit side-by-side when space permits */
+}
+.date-slicer-container .inputs-panel .input-group:not(:last-child) {
+  margin-right: 3px;
+}
+.date-slicer-container .inputs-panel .input-group label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.date-slicer-container .inputs-panel .input-group input[type="date"] {
+  padding: 4px;
+  border: 1px solid #a6a6a6;
+  border-radius: 4px;
+  outline: none;
+  /* width responsive to font-size using em units */
+  width: 9em;
+  min-width: 8em;
+  max-width: 16em;
+  box-sizing: border-box;
+}
+.date-slicer-container .inputs-panel .input-group input[type="date"]:focus {
+  border-color: #0078d4;
+}
+.date-slicer-container .inputs-panel .input-group.invalid input[type="date"],
+.date-slicer-container .inputs-panel .input-group input[type="date"].invalid {
+  border-color: #d8000c;
+  background-color: #ffbaba;
+}
+.date-slicer-container .header-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  /* default padding will be overridden by formatting settings */
+  padding: 3px 0px;
+  border-radius: 4px;
+}
+.date-slicer-container .header-row .header-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* allow shrinking inside flex container */
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  padding: 0px 0px;
+  padding-right: 4px;
+  /* reserve space so icons don't overlap */
+  /* readOnly input specific styles */
+}
+.date-slicer-container .header-row .header-input:read-only {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  text-decoration: inherit;
+  background-color: inherit;
+}
+.date-slicer-container .header-row .icons {
+  position: absolute;
+  color: #666;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+  pointer-events: auto;
+}
+.date-slicer-container .header-row:hover .icons {
+  opacity: 1;
+}
+
