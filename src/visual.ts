@@ -183,9 +183,17 @@ export class Visual implements IVisual {
             }
         }
 
+        // 在任何自动应用度量值之前，先尝试恢复已有的筛选（页面跳转回来时优先）
+        const hasRestoredFromFilter = this.restoreFilterFromOptions(options);
+        if (hasRestoredFromFilter) {
+            // 恢复成功后不需要继续处理，下一次 update 可以再考虑度量变化
+            this.isUserCleared = false;
+            this.suppressDefaultRangeApply = false;
+            return;
+        }
+
         // 检查度量值是否存在及是否发生变化
         const hasDefaultMeasures = dataView.categorical.values && dataView.categorical.values.length >= 2;
-        let measureValuesChanged = false;
 
         if (hasDefaultMeasures && !this.isUserCleared) {
             const startVal = dataView.categorical.values[0].values[0] as any;
@@ -195,7 +203,6 @@ export class Visual implements IVisual {
             
             // 检测度量值是否改变
             if (currentStartMeasure !== this.lastAppliedStartMeasure || currentEndMeasure !== this.lastAppliedEndMeasure) {
-                measureValuesChanged = true;
                 this.lastAppliedStartMeasure = currentStartMeasure;
                 this.lastAppliedEndMeasure = currentEndMeasure;
                 // 如果度量值改变，自动应用新的度量值
@@ -211,42 +218,30 @@ export class Visual implements IVisual {
             }
         }
 
-        // 首先尝试从已有的 JSON 过滤器中恢复日期值（用于页面切换回来时的状态恢复）
-        const hasRestoredFromFilter = this.restoreFilterFromOptions(options);
-
-        if (!hasRestoredFromFilter) {
-            // 如果没有从过滤器恢复，检查是否有拖入的度量值（开始日期、结束日期）
-            // 只有在没有被 clear() 抑制的情况下，才自动将度量值应用为默认范围
-            if (!this.suppressDefaultRangeApply && hasDefaultMeasures) {
-                this.applyDefaultMeasures();
-            } else {
-                if (this.suppressDefaultRangeApply) {
-                    // clear 后保持输入框为初始 min/max 值
-                    if (this.initialMin) {
-                        this.startDateInput.min = this.initialMin;
-                        this.endDateInput.min = this.initialMin;
-                    }
-                    if (this.initialMax) {
-                        this.startDateInput.max = this.initialMax;
-                        this.endDateInput.max = this.initialMax;
-                    }
-                    // 不调用 applyFilter()，以保持已清除的无筛选状态
-                } else {
-                    // 没有度量值也未被抑制：使用初始 min/max 填充并应用过滤
-                    if (!this.startDateInput.value && this.initialMin) {
-                        this.startDateInput.value = this.initialMin;
-                    }
-                    if (!this.endDateInput.value && this.initialMax) {
-                        this.endDateInput.value = this.initialMax;
-                    }
-                    this.validateDates();
-                    this.applyFilter();
-                }
+        // 没有可恢复的筛选，也没有新的度量变化，需要根据当前状态填充或保持范围
+        if (!this.suppressDefaultRangeApply && hasDefaultMeasures) {
+            this.applyDefaultMeasures();
+        } else if (this.suppressDefaultRangeApply) {
+            // clear 后保持输入框为初始 min/max 值
+            if (this.initialMin) {
+                this.startDateInput.min = this.initialMin;
+                this.endDateInput.min = this.initialMin;
             }
+            if (this.initialMax) {
+                this.startDateInput.max = this.initialMax;
+                this.endDateInput.max = this.initialMax;
+            }
+            // 不调用 applyFilter()，以保持已清除的无筛选状态
         } else {
-            // 成功从过滤器恢复后，清除用户清除标记，允许后续度量值变化更新
-            this.isUserCleared = false;
-            this.suppressDefaultRangeApply = false;
+            // 没有度量值也未被抑制：使用初始 min/max 填充并应用过滤
+            if (!this.startDateInput.value && this.initialMin) {
+                this.startDateInput.value = this.initialMin;
+            }
+            if (!this.endDateInput.value && this.initialMax) {
+                this.endDateInput.value = this.initialMax;
+            }
+            this.validateDates();
+            this.applyFilter();
         }
     }
 
@@ -362,15 +357,6 @@ export class Visual implements IVisual {
 
         const conditions: any[] = [];
 
-        // helper that builds a Date object representing **local** midnight for a
-        // yyyy-mm-dd string. we avoid calling new Date("yyyy-mm-dd") because
-        // that constructor treats the input as UTC and the resulting ISO string
-        // will later be displayed in the user's local timezone (e.g. +8) – hence
-        // the "08:00" symptom described in the bug report. constructing with
-        // numeric arguments gives us a Date at local midnight; when the filter
-        // serializes it to UTC the value will shift backwards by the timezone
-        // offset so that Power BI always shows exactly midnight for the chosen
-        // calendar day.
         const parseLocalDate = (isoDate: string): Date | null => {
             if (!isoDate) {
                 return null;
@@ -465,7 +451,7 @@ export class Visual implements IVisual {
         // 用户主动点击“重置”时允许应用默认度量（解除清除时的抑制）
         this.suppressDefaultRangeApply = false;
         this.isUserCleared = false;  // 清除用户清除标记
-        // 如果用户提供了度量值，则设置为度量的结果，否则回退到 min/max值。
+
         const dv = this.latestDataView;
         if (dv && dv.categorical && dv.categorical.values) {
             const values = dv.categorical.values;
@@ -485,16 +471,15 @@ export class Visual implements IVisual {
                 return;
             }
         }
-        // 如果没有度量值，回退到最小/最大值
-        if (!this.startDateInput.value && this.initialMin) {
-            this.startDateInput.value = this.initialMin;
-        }
-        if (!this.endDateInput.value && this.initialMax) {
-            this.endDateInput.value = this.initialMax;
-        }
-        // 再次应用过滤确保同步
-        this.validateDates();
-        this.applyFilter();
+
+        // 没有度量值，行为同 clear：显示完整范围并移除过滤器
+        this.startDateInput.value = this.initialMin;
+        this.endDateInput.value = this.initialMax;
+        this.startDateInput.classList.remove("invalid");
+        this.endDateInput.classList.remove("invalid");
+        this.isUserCleared = true;            // 保持与 clear 的一致标记
+        this.suppressDefaultRangeApply = true; // 保持后续 update 不重写
+        this.host.applyJsonFilter(null, "general", "filter", powerbi.FilterAction.remove);
     }
 
     // store which field triggered the change so validation can correct the other value if needed

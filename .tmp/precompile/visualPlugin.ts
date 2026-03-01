@@ -5,8 +5,8 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG: IVisualPlugin = {
-    name: 'dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG',
+var dateSlicer43C890F8DD8D426DB5903123A14E9F00: IVisualPlugin = {
+    name: 'dateSlicer43C890F8DD8D426DB5903123A14E9F00',
     displayName: 'DateSlicer',
     class: 'Visual',
     apiVersion: '5.3.0',
@@ -27,6 +27,6 @@ var dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG"] = dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG;
+    powerbi.visuals.plugins["dateSlicer43C890F8DD8D426DB5903123A14E9F00"] = dateSlicer43C890F8DD8D426DB5903123A14E9F00;
 }
-export default dateSlicer43C890F8DD8D426DB5903123A14E9F00_DEBUG;
+export default dateSlicer43C890F8DD8D426DB5903123A14E9F00;
