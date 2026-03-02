@@ -183,19 +183,22 @@ export class Visual implements IVisual {
             }
         }
 
-        // 在任何自动应用度量值之前，先尝试恢复已有的筛选（页面跳转回来时优先）
-        const hasRestoredFromFilter = this.restoreFilterFromOptions(options);
-        if (hasRestoredFromFilter) {
-            // 恢复成功后不需要继续处理，下一次 update 可以再考虑度量变化
-            this.isUserCleared = false;
-            this.suppressDefaultRangeApply = false;
-            return;
+        // 仅在当前输入尚未设置（首次渲染或返回页面）且未被用户清除时，尝试从 options 恢复筛选
+        let hasRestoredFromFilter = false;
+        if (!this.startDateInput.value && !this.endDateInput.value && !this.isUserCleared) {
+            hasRestoredFromFilter = this.restoreFilterFromOptions(options);
+            if (hasRestoredFromFilter) {
+                // 恢复成功后清理标记并返回，避免自动应用度量覆盖恢复的筛选
+                this.isUserCleared = false;
+                this.suppressDefaultRangeApply = false;
+                return;
+            }
         }
 
         // 检查度量值是否存在及是否发生变化
         const hasDefaultMeasures = dataView.categorical.values && dataView.categorical.values.length >= 2;
 
-        if (hasDefaultMeasures && !this.isUserCleared) {
+        if (hasDefaultMeasures && !this.isUserCleared && !this.suppressDefaultRangeApply) {
             const startVal = dataView.categorical.values[0].values[0] as any;
             const endVal = dataView.categorical.values[1].values[0] as any;
             const currentStartMeasure = startVal != null && startVal !== true ? this.formatDate(startVal) : "";
@@ -492,6 +495,9 @@ export class Visual implements IVisual {
         } else if (target === this.endDateInput) {
             this.lastChanged = "end";
         }
+
+        // 用户主动修改日期后，不再允许后续 update 自动将度量值设回控件
+        this.suppressDefaultRangeApply = true;
 
         // adjust bounds of the opposite field
         const startVal = this.startDateInput.value;
